@@ -1,0 +1,8 @@
+{
+    "raw_text": "John Doe Email john.doe@example.com  Phone 91 9876543210 Education B.Tech in Computer Science, ABC University, 2020-2024 CGPA 8.510 Experience Software Intern at XYZ Company Jan 2024 - Jun 2024 - Worked on backend APIs using Python and Flask - Improved database performance by 15 Freelance Web Developer 2022 - 2023 - Built responsive websites using HTML, CSS, JavaScript Skills Python, Java, HTML, CSS, JavaScript, SQL, Flask, Git",
+    "sections": {
+        "education": "education btech computer science abc university 20202024 cgpa 8510",
+        "experience": "experience software intern xyz company jan 2024 jun 2024 worked backend apis using python flask improved database performance 15 freelance web developer 2022 2023 built responsive websites using html css javascript",
+        "skills": "skills python java html css javascript sql flask git"
+    }
+}

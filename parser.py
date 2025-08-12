@@ -1,12 +1,18 @@
 import fitz  # PyMuPDF
 import re
 import json
+import nltk
+from nltk.corpus import stopwords
+import string
+
+# Download stopwords (only first time)
+nltk.download('stopwords')
+stop_words = set(stopwords.words('english'))
 
 # ---------------------------
-# Step 1: Read PDF File
+# Step 1: Read PDF
 # ---------------------------
 def read_pdf(file_path):
-    """Reads text from a PDF file."""
     doc = fitz.open(file_path)
     text = ""
     for page in doc:
@@ -14,49 +20,67 @@ def read_pdf(file_path):
     return text
 
 # ---------------------------
-# Step 2: Extract Email
+# Step 2: Clean Text
 # ---------------------------
-def extract_email(text):
-    """Finds the first email in the text."""
-    email_pattern = r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
-    matches = re.findall(email_pattern, text)
-    return matches[0] if matches else None
+def clean_text(text):
+    """Removes noise from resume text."""
+    # Remove extra spaces & newlines
+    text = re.sub(r'\s+', ' ', text)
+    # Remove weird symbols except common ones
+    text = re.sub(r'[^\w\s@.,-]', '', text)
+    return text.strip()
 
 # ---------------------------
-# Step 3: Extract Phone
+# Step 3: Split into Sections
 # ---------------------------
-def extract_phone(text):
-    """Finds the first phone number in the text."""
-    phone_pattern = r"\+?\d[\d\s-]{8,}\d"
-    matches = re.findall(phone_pattern, text)
-    return matches[0] if matches else None
+def split_sections(text):
+    """Splits resume into sections like education, experience, skills."""
+    sections = {"education": "", "experience": "", "skills": ""}
+    text_lower = text.lower()
+
+    # Find keywords and split text
+    edu_match = re.search(r'(education|academic background).*?(?=(experience|work experience|skills|$))', text_lower, re.DOTALL)
+    exp_match = re.search(r'(experience|work experience).*?(?=(skills|education|$))', text_lower, re.DOTALL)
+    skills_match = re.search(r'(skills).*?(?=(experience|education|$))', text_lower, re.DOTALL)
+
+    if edu_match:
+        sections["education"] = edu_match.group().strip()
+    if exp_match:
+        sections["experience"] = exp_match.group().strip()
+    if skills_match:
+        sections["skills"] = skills_match.group().strip()
+
+    return sections
 
 # ---------------------------
-# Step 4: Extract Name (Basic Logic)
+# Step 4: Basic Preprocessing
 # ---------------------------
-def extract_name(text):
-    """Finds a likely name (first line with <= 3 words)."""
-    lines = text.split("\n")
-    for line in lines:
-        if line.strip() and len(line.split()) <= 3:  # Likely a name
-            return line.strip()
-    return None
+def preprocess_text(text):
+    """Lowercase, remove punctuation & stopwords."""
+    text = text.lower()
+    text = text.translate(str.maketrans('', '', string.punctuation))
+    words = text.split()
+    words = [w for w in words if w not in stop_words]
+    return ' '.join(words)
 
 # ---------------------------
-# Step 5: Main Script
+# Step 5: Main
 # ---------------------------
 if __name__ == "__main__":
     resume_text = read_pdf("sample_resume.pdf")
+    cleaned_text = clean_text(resume_text)
+    sections = split_sections(cleaned_text)
 
+    # Apply preprocessing to each section
+    processed_sections = {k: preprocess_text(v) for k, v in sections.items()}
+
+    # Save results
     data = {
-        "name": extract_name(resume_text),
-        "email": extract_email(resume_text),
-        "phone": extract_phone(resume_text)
+        "raw_text": cleaned_text,
+        "sections": processed_sections
     }
 
-    # Save results in JSON
-    with open("parsed_resume.json", "w") as f:
+    with open("parsed_resume_day2.json", "w") as f:
         json.dump(data, f, indent=4)
 
-    print("✅ Resume parsed successfully! Data saved to parsed_resume.json")
-    print(data)
+    print("✅ Day 2 Parsing complete! Saved to parsed_resume_day2.json")
